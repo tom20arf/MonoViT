@@ -1,4 +1,4 @@
-
+#Imports
 from __future__ import absolute_import, division, print_function
 
 import numpy as np
@@ -26,6 +26,8 @@ class Trainer:
     #######################
     ####   MonoViT      ##
     ######################
+        #Calling the model
+
         #self.model_optimizer = optim.AdamW(self.parameters_to_train, self.opt.learning_rate)
         self.params = [ {
             "params":self.parameters_to_train, 
