@@ -80,7 +80,12 @@ class Mlp(nn.Module):
         x = self.fc2(x)
         x = self.drop(x)
         return x
-
+'''
+This code defines a PyTorch MLP neural network module that consists of 
+two fully connected layers with an activation function and dropout 
+layers for regularization. It can be used as a building block for 
+various computer vision tasks, such as monocular camera depth estimation.
+'''
 
 class Conv2d_BN(nn.Module):
     def __init__(
@@ -120,6 +125,11 @@ class Conv2d_BN(nn.Module):
         x = self.act_layer(x)
 
         return x
+"""
+The Conv2d_BN class defines a custom PyTorch module that applies a 2D convolution, 
+batch normalization, and an optional activation function to the input data. 
+The 2D convolution layer weights are initialized using the Kaiming initialization method.
+"""
 
 
 class DWConv2d_BN(nn.Module):
@@ -173,7 +183,12 @@ class DWConv2d_BN(nn.Module):
         x = self.act(x)
 
         return x
-
+'''
+The DWConv2d_BN class represents a depthwise separable convolution layer.
+It consists of a depthwise convolution (dwconv) layer, a pointwise convolution
+(pwconv) layer, a batch normalization (BN) layer, and an activation layer
+(Hardswish by default). The forward method applies these layers sequentially to the input.
+'''
 
 class DWCPatchEmbed(nn.Module):
     """
@@ -207,7 +222,12 @@ class DWCPatchEmbed(nn.Module):
         x = self.patch_conv(x)
 
         return x
-
+'''
+The DWCPatchEmbed class performs depthwise convolutional patch embedding.
+It converts input images into a sequence of patch embeddings using a DWConv2d_BN layer
+with a specified patch size, stride, and padding. The Hardswish activation function is used
+by default. The forward method applies the patch_conv layer to the input image.
+'''
 
 class Patch_Embed_stage(nn.Module):
     def __init__(self, embed_dim, num_path=4, isPool=False, norm_cfg=dict(type="BN")):
@@ -236,7 +256,13 @@ class Patch_Embed_stage(nn.Module):
             att_inputs.append(x)
 
         return att_inputs
-
+"""
+The Patch_Embed_stage class represents a stage of patch embedding layers.
+It creates a specified number of DWCPatchEmbed layers (num_path) and applies them
+sequentially to the input. If isPool is set to True, the first patch embedding layer
+has a stride of 2; otherwise, all layers have a stride of 1. The forward method
+processes the input through these patch embedding layers and returns the output.
+"""
 
 class ConvPosEnc(nn.Module):
     """Convolutional Position Encoding.
@@ -257,7 +283,13 @@ class ConvPosEnc(nn.Module):
         x = x.flatten(2).transpose(1, 2).contiguous()
 
         return x
-
+"""
+The ConvPosEnc class implements a convolutional position encoding layer.
+It applies a depthwise separable convolution to the input feature map, using
+a specified kernel size (k) and adding the result to the original feature map.
+The forward method takes an input tensor and its spatial dimensions, reshapes
+the input to match the spatial dimensions, and then applies the convolution.
+"""
 
 class ConvRelPosEnc(nn.Module):
     """Convolutional relative position encoding."""
@@ -328,7 +360,16 @@ class ConvRelPosEnc(nn.Module):
         EV_hat_img = q_img * conv_v_img
         EV_hat = EV_hat_img
         return EV_hat
-
+"""
+The ConvRelPosEnc class implements a convolutional relative position encoding layer.
+It applies different-sized convolutions to different attention head splits,
+with each convolution operating on a specific number of channels (Ch) per head.
+The window parameter can be either an integer or a dictionary that maps
+window sizes to the number of attention head splits.
+The forward method takes query and value tensors and their spatial dimensions,
+reshapes the value tensor, splits it according to channel splits, and applies
+convolutions to each split before reassembling the output.
+"""
 
 class FactorAtt_ConvRelPosEnc(nn.Module):
     """Factorized attention with convolutional relative position encoding class."""
@@ -391,7 +432,13 @@ class FactorAtt_ConvRelPosEnc(nn.Module):
         x = self.proj_drop(x)
 
         return x
-
+"""
+Implements a factorized attention layer with convolutional relative position encoding.
+The layer applies factorized attention by computing a dot product of the query matrix
+and the softmax of the key matrix. It then applies convolutional relative position
+encoding to the query and value matrices, and merges the outputs before applying the
+output projection.
+"""
 
 class MHCABlock(nn.Module):
     def __init__(
@@ -434,7 +481,13 @@ class MHCABlock(nn.Module):
         cur = self.norm2(x)
         x = x + self.drop_path(self.mlp(cur))
         return x
-
+"""
+A multi-head convolutional attention (MHCA) block that combines convolutional
+position encoding, factorized attention with convolutional relative position encoding,
+and an MLP layer. It applies these components sequentially and adds the results to the
+input, implementing a skip connection. The block can share position encoding layers
+with other blocks.
+"""
 
 class MHCAEncoder(nn.Module):
     def __init__(
@@ -477,7 +530,12 @@ class MHCAEncoder(nn.Module):
         # return x's shape : [B, N, C] -> [B, C, H, W]
         x = x.reshape(B, H, W, -1).permute(0, 3, 1, 2).contiguous()
         return x
-
+"""
+The MHCAEncoder class represents a multi-head convolutional attention (MHCA) encoder
+with a specified number of layers. It uses convolutional position encoding and
+relative position encoding layers shared across all MHCA blocks. The forward method
+processes the input through the MHCA layers and returns the output.
+"""
 
 class ResBlock(nn.Module):
     def __init__(
@@ -530,7 +588,12 @@ class ResBlock(nn.Module):
         feat = self.conv2(feat)
 
         return identity + feat
-
+"""
+Implements a residual block with two convolutional layers and an optional activation
+function. The block consists of a Conv2d_BN layer followed by a depthwise convolution,
+a normalization layer, and an activation function. The output of this sequence is then
+added to the input to create the final output, implementing a skip connection.
+"""
 
 class MHCA_stage(nn.Module):
     def __init__(
@@ -581,7 +644,13 @@ class MHCA_stage(nn.Module):
         out = self.aggregate(out_concat)
 
         return out,att_outputs
-
+"""
+The MHCA_stage class combines multiple instances of MHCAEncoder with a residual block
+and an aggregation layer. It processes the input through each encoder, along with an
+identity residual block, and concatenates the outputs. The concatenated output is then
+passed through the aggregation layer to produce the final output. The class supports
+a variable number of paths, determined by the num_path parameter.
+"""
 
 def dpr_generator(drop_path_rate, num_layers, num_stages):
     """
@@ -596,7 +665,11 @@ def dpr_generator(drop_path_rate, num_layers, num_stages):
         cur += num_layers[i]
 
     return dpr
-
+"""
+Generates a list of drop path rates following a linear decay rule. The function
+creates a list of drop path rates based on the given parameters and returns a
+list of lists where each sublist contains the drop path rates for a specific stage.
+"""
 
 @BACKBONES.register_module()
 class MPViT(nn.Module):
@@ -734,7 +807,14 @@ class MPViT(nn.Module):
                 # trick: eval have effect on BatchNorm only
                 if isinstance(m, _BatchNorm):
                     m.eval()
-
+"""
+Multi-Path ViT (MPViT) class, a deep learning model that combines the ideas
+of Vision Transformers with multi-path processing for improved performance
+on computer vision tasks. It consists of a stem, patch embedding stages, and
+Multi-Head Convolutional Self-Attention (MHCA) stages. The model can be initialized
+with pre-trained weights, and its forward method returns the output features of
+the MHCA stages.
+"""
 
 def mpvit_tiny(**kwargs):
     """mpvit_tiny :
@@ -759,7 +839,17 @@ def mpvit_tiny(**kwargs):
     )
     model.default_cfg = _cfg_mpvit()
     return model
-
+"""
+Construct a tiny variant of the MPViT model, with the following configurations:
+- 4 stages
+- Number of paths: [2, 3, 3, 3]
+- Number of layers: [1, 2, 4, 1]
+- Number of channels: [64, 96, 176, 216]
+- MLP ratio: 2
+Number of params: 5,843,736
+FLOPs: 1,654,163,812
+Activations: 16,641,952
+"""
 
 def mpvit_xsmall(**kwargs):
     """mpvit_xsmall :
@@ -789,7 +879,17 @@ def mpvit_xsmall(**kwargs):
     del logger
     model.default_cfg = _cfg_mpvit()
     return model
-
+"""
+Construct an extra small variant of the MPViT model, with the following configurations:
+- 4 stages
+- Number of paths: [2, 3, 3, 3]
+- Number of layers: [1, 2, 4, 1]
+- Number of channels: [64, 128, 192, 256]
+- MLP ratio: 4
+Number of params: 10,573,448
+FLOPs: 2,971,396,560
+Activations: 21,983,464
+"""
 
 def mpvit_small(**kwargs):
     """mpvit_small :
@@ -819,7 +919,17 @@ def mpvit_small(**kwargs):
     del logger
     model.default_cfg = _cfg_mpvit()
     return model
-
+"""
+Construct a small variant of the MPViT model, with the following configurations:
+- 4 stages
+- Number of paths: [2, 3, 3, 3]
+- Number of layers: [1, 3, 6, 3]
+- Number of channels: [64, 128, 216, 288]
+- MLP ratio: 4
+Number of params: 22,892,400
+FLOPs: 4,799,650,824
+Activations: 30,601,880
+"""
 
 def mpvit_base(**kwargs):
     """mpvit_base :
@@ -844,3 +954,14 @@ def mpvit_base(**kwargs):
     )
     model.default_cfg = _cfg_mpvit()
     return model
+"""
+Construct a base variant of the MPViT model, with the following configurations:
+- 4 stages
+- Number of paths: [2, 3, 3, 3]
+- Number of layers: [1, 3, 8, 3]
+- Number of channels: [128, 224, 368, 480]
+- MLP ratio: 4
+Number of params: 74,845,976
+FLOPs: 16,445,326,240
+Activations: 60,204,392
+"""
